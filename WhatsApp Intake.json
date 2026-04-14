@@ -1,0 +1,371 @@
+{
+  "name": "WhatsApp Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-intake",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b2473e68-e3ae-4461-8c05-9eb3f44d6141",
+      "name": "Webhook",
+      "webhookId": "500b9406-9f11-4e8a-8383-13bcac7955af"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a lead qualification assistant. Extract information from this WhatsApp message and qualify the lead.\n\nWhatsApp message details:\n- From (phone): {{ $json.body['From'] }}\n- Sender name: {{ $json.body['ProfileName'] }}\n- Message: {{ $json.body['Body'] }}\n\nExtract and return ONLY a JSON object with these exact fields:\n{\n  \"name\": \"extracted full name or use ProfileName if not mentioned\",\n  \"phone\": \"extracted phone number from From field, remove whatsapp: prefix\",\n  \"company\": \"extracted company name or unknown\",\n  \"budget\": \"extracted budget or unknown\",\n  \"message\": \"brief summary of their need\",\n  \"score\": \"Hot or Warm or Cold\",\n  \"numeric_score\": <number 1-10>,\n  \"reason\": \"one sentence explanation\",\n  \"follow_up_message\": \"short personalized WhatsApp reply under 50 words\"\n}\n\nScoring: $2000+ urgent = 8-10 Hot, $500-2000 clear need = 5-7 Warm, under $500 vague = 1-4 Cold.\nReturn ONLY the JSON, no other text."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b8ea7db0-0a92-4a8d-8ae4-590980010e9d",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "3aDFxCRTN1OZW1YU",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.output[0].content[0].text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nreturn [{\n  json: parsed\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "c2e80219-1b04-4388-9b04-b7a510f2876d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json['phone'] }}@placeholder.com",
+        "additionalFields": {
+          "companyName": "={{ $json['company'] }}",
+          "firstName": "={{ $json['name'] }}",
+          "phoneNumber": "={{ $json['phone'] }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        0
+      ],
+      "id": "47ed13f8-c357-4ee8-a6bf-ae8f1c21ee90",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "X4YjaQ0OzjQRLF3a",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs",
+          "mode": "list",
+          "cachedResultName": "n8n template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ new Date().toISOString() }}",
+            "Name": "={{ $('Code in JavaScript').item.json['name'] }}",
+            "Email": "={{ $('Code in JavaScript').item.json['phone'] }}",
+            "Company": "={{ $('Code in JavaScript').item.json['company'] }}",
+            "Budget": "={{ $('Code in JavaScript').item.json['budget'] }}",
+            "Message": "={{ $('Code in JavaScript').item.json['message'] }}",
+            "Score": "={{ $('Code in JavaScript').item.json['score'] }}",
+            "Reason": "={{ $('Code in JavaScript').item.json['reason'] }}",
+            "Numeric Score": "={{ $('Code in JavaScript').item.json['numeric_score'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Numeric Score",
+              "displayName": "Numeric Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow Up Sent",
+              "displayName": "Follow Up Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow Up Timestamp",
+              "displayName": "Follow Up Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "65d79636-60f6-4e40-ba77-273412c1b52e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WxUTVWxAZv4p5HLC",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ $('Webhook').item.json.body['From'].replace('whatsapp:', '') }}",
+        "toWhatsapp": true,
+        "message": "={{ $('Code in JavaScript').item.json['follow_up_message'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "7ae6f23e-7562-4886-89da-8d32c8ce95ef",
+      "name": "Send an SMS/MMS/WhatsApp message",
+      "credentials": {
+        "twilioApi": {
+          "id": "qHFqnfVAfMdPvRLq",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=💬 New WhatsApp Lead!\n\n👤 Name: {{ $('Code in JavaScript').item.json['name'] }}\n📱 Phone: {{ $('Code in JavaScript').item.json['phone'] }}\n🏢 Company: {{ $('Code in JavaScript').item.json['company'] }}\n💰 Budget: {{ $('Code in JavaScript').item.json['budget'] }}\n🎯 Score: {{ $('Code in JavaScript').item.json['score'] }} ({{ $('Code in JavaScript').item.json['numeric_score'] }}/10)\n📝 Reason: {{ $('Code in JavaScript').item.json['reason'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "7addb74c-9c7b-4d10-bea4-c0f7816dccb2",
+      "name": "Discord",
+      "webhookId": "539177b6-d641-4586-ba02-64ebaa169bba",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "lD5c3TIAXk5oUbPx",
+          "name": "Discord Webhook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an SMS/MMS/WhatsApp message": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f3487e42-542b-425e-8bce-b138894e4982",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "71cbc742e43fc123f2667b0cf9fd7f75f71b4c8e4f3e47003290754a37ddd06f"
+  },
+  "id": "iTNk4P8KyNcGpqa9",
+  "tags": []
+}

@@ -1,0 +1,349 @@
+{
+  "name": "Voice Call Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Voice Call Summary",
+        "formDescription": "Paste the call transcript below",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Transcript",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Lead Email",
+              "fieldType": "email",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5b0c871b-79c6-4199-b268-49169efa2f78",
+      "name": "On form submission",
+      "webhookId": "d4f45e6e-e663-4f43-8594-621dd0ecad01"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a sales call analyst. Analyze this call transcript and extract key information.\n\nTranscript:\n{{ $json['Transcript'] }}\n\nReturn ONLY a JSON object with these exact fields:\n{\n  \"summary\": \"2-3 sentence summary of the call\",\n  \"lead_name\": \"name of the prospect\",\n  \"company\": \"prospect's company\",\n  \"budget\": \"budget mentioned\",\n  \"timeline\": \"timeline mentioned\",\n  \"pain_points\": \"main problems they want solved\",\n  \"next_action\": \"what was agreed as next step\",\n  \"sentiment\": \"Positive or Neutral or Negative\",\n  \"deal_likelihood\": \"High or Medium or Low\"\n}\n\nReturn ONLY the JSON, no other text."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "35d95118-b34a-4ef3-abb8-8ad1b76af73a",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "3aDFxCRTN1OZW1YU",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.output[0].content[0].text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nreturn [{\n  json: parsed\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        0
+      ],
+      "id": "ec47575c-a409-4a31-a853-809d550ccdba",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('On form submission').item.json['Lead Email'] }}",
+        "additionalFields": {
+          "companyName": "={{ $('Code in JavaScript').item.json['company'] }}",
+          "firstName": "={{ $('Code in JavaScript').item.json['lead_name'] }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        0
+      ],
+      "id": "8e5df8e6-7097-469e-8284-ca9e1e17b1de",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "X4YjaQ0OzjQRLF3a",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs",
+          "mode": "list",
+          "cachedResultName": "n8n template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ new Date().toISOString() }}",
+            "Name": "={{ $('Code in JavaScript').item.json['lead_name'] }}",
+            "Email": "={{ $('On form submission').item.json['Lead Email'] }}",
+            "Company": "={{ $('Code in JavaScript').item.json['company'] }}",
+            "Budget": "={{ $('Code in JavaScript').item.json['budget'] }}",
+            "Message": "={{ $('Code in JavaScript').item.json['summary'] }}",
+            "Score": "={{ $('Code in JavaScript').item.json['deal_likelihood'] }}",
+            "Reason": "={{ $('Code in JavaScript').item.json['pain_points'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Numeric Score",
+              "displayName": "Numeric Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow Up Sent",
+              "displayName": "Follow Up Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow Up Timestamp",
+              "displayName": "Follow Up Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        0
+      ],
+      "id": "b1c7d66e-0061-4014-85f8-52e250be84d5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WxUTVWxAZv4p5HLC",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=📞 New Call Summary!\n\n👤 Lead: {{ $('Code in JavaScript').item.json['lead_name'] }}\n📧 Email: {{ $('On form submission').item.json['Lead Email'] }}\n🏢 Company: {{ $('Code in JavaScript').item.json['company'] }}\n💰 Budget: {{ $('Code in JavaScript').item.json['budget'] }}\n⏱️ Timeline: {{ $('Code in JavaScript').item.json['timeline'] }}\n😊 Sentiment: {{ $('Code in JavaScript').item.json['sentiment'] }}\n🎯 Deal Likelihood: {{ $('Code in JavaScript').item.json['deal_likelihood'] }}\n📋 Summary: {{ $('Code in JavaScript').item.json['summary'] }}\n➡️ Next Action: {{ $('Code in JavaScript').item.json['next_action'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        16
+      ],
+      "id": "69b9e7ca-8fb2-488d-a9f4-dd6ee8357bf0",
+      "name": "Discord",
+      "webhookId": "ed076064-cf8d-4a49-be7b-476aa69c033b",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "lD5c3TIAXk5oUbPx",
+          "name": "Discord Webhook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a9da4180-8e16-4def-addf-89c29838189c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "71cbc742e43fc123f2667b0cf9fd7f75f71b4c8e4f3e47003290754a37ddd06f"
+  },
+  "id": "vFZwOkLAznQddNYJ",
+  "tags": []
+}
