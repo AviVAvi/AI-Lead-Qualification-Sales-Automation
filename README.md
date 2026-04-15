@@ -1,3 +1,13 @@
+## 📦 Get the Workflow Files
+
+The full workflow JSON files, setup guide, and Google Sheets template are available as a packaged download:
+
+**[→ Buy on Gumroad ($39)](https://asmitbohra.gumroad.com/l/eoyaey)**
+
+Includes 6 ready-to-import n8n workflow JSONs + step-by-step setup guide + Google Sheets template.
+
+---
+
 # AI Lead Qualification & Sales Automation System
 
 An end-to-end AI-powered lead qualification and sales automation system built with n8n, GPT-4o-mini, HubSpot, Twilio, and Google Sheets. The system captures leads from multiple channels, qualifies them instantly using AI, automates follow-ups, and syncs everything to a CRM — with zero manual effort.
