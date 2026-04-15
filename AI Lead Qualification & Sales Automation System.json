@@ -1,0 +1,623 @@
+{
+  "name": "AI Lead Qualification & Sales Automation System",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Lead Intake Form",
+        "formDescription": "Tell us about your project",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company"
+            },
+            {
+              "fieldLabel": "What are you looking for?",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Budget",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Under $500"
+                  },
+                  {
+                    "option": "$500-$2000"
+                  },
+                  {
+                    "option": "$2000+"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ea0179d2-1eb6-40c9-9174-2905b6573b20",
+      "name": "On form submission",
+      "webhookId": "555670d6-190d-4265-9433-99c19baaba98"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a lead qualification assistant. Analyze this lead and respond in JSON only, no extra text AND Sign off with \"Best, Asmit\" — not \"[Your Name]\":\n\nName: {{ $('On form submission').item.json['Full Name?'] }}\nCompany: {{ $('On form submission').item.json['Company'] }}\nBudget: {{ $('On form submission').item.json['Budget'] }}\nMessage: {{ $('On form submission').item.json['What are you looking for?'] }}\n\nRespond with exactly this JSON structure:\n{\n  \"score\": \"Hot\" or \"Warm\" or \"Cold\",\n  \"numeric_score\": a number from 1-10,\n  \"reason\": \"one sentence why\",\n  \"follow_up_email\": \"a personalized 3-4 sentence follow up email to this lead addressing their specific need\"\n}\n\nScoring guide:\n- $2000+ budget + urgent need = 8-10\n- $500-$2000 + clear need = 5-7\n- Under $500 + vague need = 1-4"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        96
+      ],
+      "id": "81570520-1bb6-4546-b9ec-2eb925ab08c1",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "3aDFxCRTN1OZW1YU",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output[0].content[0].text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nreturn [{\n  json: {\n    score: parsed.score,\n    numeric_score: parsed.numeric_score,\n    reason: parsed.reason,\n    follow_up_email: parsed.follow_up_email\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        96
+      ],
+      "id": "8d674f90-98ff-4d17-b5e9-f2075e5faf24",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Email'] }}",
+        "subject": "Following up on your enquiry",
+        "emailType": "text",
+        "message": "={{ $('Code in JavaScript').item.json.follow_up_email }}\n\nReady to get started? Book a 30-minute call directly here:\nhttps://calendly.com/asmitbohra/30min\n\nLooking forward to speaking with you!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "3f862d1d-f8bc-41a9-9c6f-b58dd89286cf",
+      "name": "Send a message",
+      "webhookId": "72212ce7-d5c8-4d39-96c1-56d84d53731f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TKCXKDWkCHxGLFUl",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs",
+          "mode": "list",
+          "cachedResultName": "n8n template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $('On form submission').item.json['submittedAt'] }}",
+            "Name": "={{ $('On form submission').item.json['Full Name?'] }}",
+            "Email": "={{ $('On form submission').item.json['Email'] }}",
+            "Company": "={{ $('On form submission').item.json['Company'] }}",
+            "Budget": "={{ $('On form submission').item.json['Budget'] }}",
+            "Message": "={{ $('On form submission').item.json['What are you looking for?'] }}",
+            "Score": "={{ $('Code in JavaScript').item.json.score }}",
+            "Reason": "={{ $('Code in JavaScript').item.json.reason }}",
+            "Numeric Score": "={{ $('Code in JavaScript').item.json.numeric_score }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Numeric Score",
+              "displayName": "Numeric Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2512,
+        272
+      ],
+      "id": "24ec2c2c-a30c-400e-bdb0-d91660f2f3d9",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WxUTVWxAZv4p5HLC",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6dc1cd26-39f6-4620-812c-a13dae3ff016",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": "Hot",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        96
+      ],
+      "id": "dae175bd-28d8-4adb-a387-0b3895e25abb",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Email'] }}",
+        "subject": "Thanks for your interest",
+        "emailType": "text",
+        "message": "=Hi {{ $('On form submission').item.json['Full Name?'] }},  Thank you for reaching out! We've received your enquiry and will review it shortly.  In the meantime, feel free to reply to this email if you have any questions.  Best regards, [Your Name]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        192
+      ],
+      "id": "1531c23c-4816-4dac-a73a-0980667751b0",
+      "name": "Send a message1",
+      "webhookId": "f5af91f3-1acc-4c91-a424-33489314add0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TKCXKDWkCHxGLFUl",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🔥 HOT LEAD ALERT!\n\nName: {{ $('On form submission').item.json['Full Name?'] }}\nEmail: {{ $('On form submission').item.json['Email'] }}\nCompany: {{ $('On form submission').item.json['Company'] }}\nBudget: {{ $('On form submission').item.json['Budget'] }}\nMessage: {{ $('On form submission').item.json['What are you looking for?'] }}\n\nAI Reason: {{ $('Code in JavaScript').item.json.reason }}\nScore: {{ $('Code in JavaScript').item.json.numeric_score }}/10\n\nFollow-up email has been sent automatically ✅",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        0
+      ],
+      "id": "3d81d316-08fa-44f0-b1ac-142fc1feb459",
+      "name": "Discord",
+      "webhookId": "f818f090-3543-4aec-a5ff-5e0e8d96e33f",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "lD5c3TIAXk5oUbPx",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a sales assistant. Based on this lead, write a brief internal sales note for the sales team.\n\nLead Details:\nName: {{ $('On form submission').item.json['Full Name?'] }}\nCompany: {{ $('On form submission').item.json['Company'] }}\nBudget: {{ $('On form submission').item.json['Budget'] }}\nNeed: {{ $('On form submission').item.json['What are you looking for?'] }}\nAI Score: {{ $('Code in JavaScript').item.json.score }}\nAI Reason: {{ $('Code in JavaScript').item.json.reason }}\n\nWrite a short internal note with exactly these sections:\n1. Who is this lead (1 sentence)\n2. What they need (1-2 sentences)\n3. Best angle to close them (1-2 sentences)\n4. What to say on the first call (2-3 sentences)\n5. Likely objections and how to handle them (2-3 bullet points)\n\nKeep it sharp and actionable. No fluff."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1744,
+        0
+      ],
+      "id": "de3f3fbf-a9a3-43f8-a938-81f6bc9f615a",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "3aDFxCRTN1OZW1YU",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=📋 SALES BRIEF\n\n{{ $json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        144
+      ],
+      "id": "a63c35cd-755c-4381-9d8b-2523c89b1aa2",
+      "name": "Discord1",
+      "webhookId": "24d09850-7d58-4a7e-80de-406be163c49c",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "lD5c3TIAXk5oUbPx",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs",
+          "mode": "list",
+          "cachedResultName": "n8n template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bx4m5_8KIxyJg_vPPPK4JPFP6IW9cwZV-7bmhcU0QVs/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $('On form submission').item.json['Email'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a1a1eb80-02d7-4791-a73e-6ee893885e3d",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WxUTVWxAZv4p5HLC",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "93cfe3bb-d073-49cd-b5f8-147c13526653",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "cb4822c6-706c-4749-a8de-ea10f24ebc24",
+      "name": "If1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Discord1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "115c1e96-49a6-48ae-af3d-b924113b4438",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "71cbc742e43fc123f2667b0cf9fd7f75f71b4c8e4f3e47003290754a37ddd06f"
+  },
+  "id": "1Msdl4pgkRNTvqcz",
+  "tags": []
+}
