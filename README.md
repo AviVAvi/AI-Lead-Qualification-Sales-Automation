@@ -2,7 +2,7 @@
 
 The full workflow JSON files, setup guide, and Google Sheets template are available as a packaged download:
 
-**[→ Buy on Gumroad ($39)](https://asmitbohra.gumroad.com/l/eoyaey)**
+**[→ Buy on Gumroad](https://asmitbohra.gumroad.com/l/eoyaey)**
 
 Includes 6 ready-to-import n8n workflow JSONs + step-by-step setup guide + Google Sheets template.
 
